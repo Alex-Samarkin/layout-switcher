@@ -40,13 +40,55 @@ func playSound() {
 	_ = exec.Command("paplay", "/usr/share/sounds/freedesktop/stereo/message.oga").Run()
 }
 
-// Показывает всплывающее уведомление с результатом конвертации
-func notifyResult(text string) {
+// Показывает всплывающее уведомление с результатом конвертации и новой раскладкой
+func notifyResult(text, layoutLabel string) {
 	body := text
 	if r := []rune(text); len(r) > 80 {
 		body = string(r[:80]) + "…"
 	}
+	if layoutLabel != "" {
+		body += "\nРаскладка: " + layoutLabel
+	}
 	_ = exec.Command("notify-send", "--app-name", "layout-switcher", "Конвертация", body).Run()
+}
+
+// Проверяет, есть ли в тексте кириллица (для определения направления конвертации)
+func containsCyrillic(text string) bool {
+	for _, r := range text {
+		if r >= 0x0400 && r <= 0x04FF {
+			return true
+		}
+	}
+	return false
+}
+
+// Переключает раскладку клавиатуры на указанный код (например "us" или "ru").
+// Возвращает подпись выбранной раскладки для уведомления.
+func switchLayout(conn *dbus.Conn, code string) (string, error) {
+	layoutsObj := conn.Object("org.kde.keyboard", "/Layouts")
+
+	var layouts []struct {
+		Code  string
+		Short string
+		Label string
+	}
+	if err := layoutsObj.Call("org.kde.KeyboardLayouts.getLayoutsList", 0).Store(&layouts); err != nil {
+		return "", err
+	}
+
+	for i, l := range layouts {
+		if l.Code == code {
+			var ok bool
+			if err := layoutsObj.Call("org.kde.KeyboardLayouts.setLayout", 0, uint32(i)).Store(&ok); err != nil {
+				return "", err
+			}
+			if !ok {
+				return "", fmt.Errorf("не удалось переключить раскладку на %q", code)
+			}
+			return l.Label, nil
+		}
+	}
+	return "", fmt.Errorf("раскладка %q не найдена", code)
 }
 
 // Читает выделенный текст (primary selection) через wl-paste.
@@ -110,9 +152,22 @@ func main() {
 	// Синхронизируем изменение с Klipper, чтобы текст появился в истории
 	_ = klipper.Call("org.kde.klipper.klipper.setClipboardContents", 0, convertedText).Store()
 
+	// Определяем направление конвертации и переключаем раскладку:
+	// кириллица в источнике — RU→EN — английская; иначе EN→RU — русская
+	targetCode := "ru"
+	if containsCyrillic(currentText) {
+		targetCode = "us"
+	}
+	layoutLabel := ""
+	if label, err := switchLayout(conn, targetCode); err == nil {
+		layoutLabel = label
+	} else {
+		fmt.Fprintf(os.Stderr, "Ошибка переключения раскладки: %v\n", err)
+	}
+
 	// Мягкий звук успешной конвертации
 	playSound()
 
-	// Всплывающее уведомление с результатом
-	notifyResult(convertedText)
+	// Всплывающее уведомление с результатом и новой раскладкой
+	notifyResult(convertedText, layoutLabel)
 }

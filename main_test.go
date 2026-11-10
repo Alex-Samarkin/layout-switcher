@@ -18,3 +18,18 @@ func TestTransliterate(t *testing.T) {
 		}
 	}
 }
+
+func TestContainsCyrillic(t *testing.T) {
+	cases := map[string]bool{
+		"привет":    true,
+		"ghbdtn":    false,
+		"смесь mix": true,
+		"12345":     false,
+		"":          false,
+	}
+	for in, want := range cases {
+		if got := containsCyrillic(in); got != want {
+			t.Errorf("containsCyrillic(%q) = %v, want %v", in, got, want)
+		}
+	}
+}
