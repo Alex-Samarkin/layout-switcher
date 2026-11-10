@@ -1,0 +1,30 @@
+# Maintainer: Alex Samarkin <alexsamarkinru@gmail.com>
+pkgname=layout-switcher-git
+pkgver=r3.059d818
+pkgrel=1
+pkgdesc="Convert mistyped text between RU and EN keyboard layouts (KDE Plasma/Wayland)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/Alex-Samarkin/layout-switcher"
+license=('MIT')
+depends=('wl-clipboard' 'libnotify' 'libpulse' 'sound-theme-freedesktop' 'dbus')
+makedepends=('go' 'git')
+optdepends=('plasma-workspace: Klipper (clipboard history sync)')
+provides=('layout-switcher')
+conflicts=('layout-switcher')
+source=("layout-switcher::git+https://github.com/Alex-Samarkin/layout-switcher.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "${srcdir}/layout-switcher"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cd "${srcdir}/layout-switcher"
+  go build -trimpath -ldflags "-s -w" -o layout_switcher .
+}
+
+package() {
+  install -Dm755 "${srcdir}/layout-switcher/layout_switcher" \
+    "${pkgdir}/usr/bin/layout_switcher"
+}
