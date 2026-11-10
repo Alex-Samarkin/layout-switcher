@@ -1,6 +1,6 @@
 # Maintainer: Alex Samarkin <alexsamarkinru@gmail.com>
 pkgname=layout-switcher-git
-pkgver=r3.059d818
+pkgver=r5.861dc3f
 pkgrel=1
 pkgdesc="Convert mistyped text between RU and EN keyboard layouts (KDE Plasma/Wayland)"
 arch=('x86_64' 'aarch64')

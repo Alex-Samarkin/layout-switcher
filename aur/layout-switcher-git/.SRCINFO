@@ -1,6 +1,6 @@
 pkgbase = layout-switcher-git
 	pkgdesc = Convert mistyped text between RU and EN keyboard layouts (KDE Plasma/Wayland)
-	pkgver = r3.059d818
+	pkgver = r5.861dc3f
 	pkgrel = 1
 	url = https://github.com/Alex-Samarkin/layout-switcher
 	arch = x86_64
