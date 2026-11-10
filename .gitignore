@@ -1,0 +1,7 @@
+# Скомпилированный бинарник
+/layout_switcher
+/layout-switcher
+
+# Артефакты сборки и тестов Go
+*.test
+*.out
